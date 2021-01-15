@@ -607,7 +607,7 @@ n1(36) ─> n21(8) ─> n31(6) ─> n41(1)
           │
           └──> n48(1001)
 ```
-`func7` is a recursive function. The code can be roughly translated as (not accurately):
+`func7` is a recursive function. The code can be roughly translated as:
 ```C
 // Tree definition
 struct Tree {
