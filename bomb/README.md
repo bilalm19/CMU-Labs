@@ -401,7 +401,7 @@ The lines 36-41 is another loop. What this is doing is in each iteration, it is 
 
 Lines 44-59 is iterating over a the new array created in the loop shown in lines 36-41. Notice the special address `0x6032d0` (lines 49 and 58). This signifies a linked list. We can print its jump table and see its contents:
 ```asm
-x/12x 0x6032d0
+(gdb) x/12x 0x6032d0
 0x6032d0 <node1>:       0x000000010000014c      0x00000000006032e0
 0x6032e0 <node2>:       0x00000002000000a8      0x00000000006032f0
 0x6032f0 <node3>:       0x000000030000039c      0x0000000000603300
@@ -462,3 +462,172 @@ From above input, we will get following `sub7array`:
 This is the order of nodes in descending order. The lines 44-70 are essentially rearranging the linkedlist into the order specified in the `sub7array` array.
 
 ## Secret Phase
+The only way to access the secret phase is through the `phase_defused` function.
+```asm
+1:  0x00000000004010f4 <phase_6>:
+2:    0x00000000004015c4 <+0>:     sub    $0x78,%rsp
+3:    0x00000000004015c8 <+4>:     mov    %fs:0x28,%rax
+4:    0x00000000004015d1 <+13>:    mov    %rax,0x68(%rsp)
+5:    0x00000000004015d6 <+18>:    xor    %eax,%eax
+6:    0x00000000004015d8 <+20>:    cmpl   $0x6,0x202181(%rip)        # 0x603760 <num_input_strings>
+7:    0x00000000004015df <+27>:    jne    0x40163f <phase_defused+123>
+8:    0x00000000004015e1 <+29>:    lea    0x10(%rsp),%r8
+9:    0x00000000004015e6 <+34>:    lea    0xc(%rsp),%rcx
+10:   0x00000000004015eb <+39>:    lea    0x8(%rsp),%rdx
+11:   0x00000000004015f0 <+44>:    mov    $0x402619,%esi
+12:   0x00000000004015f5 <+49>:    mov    $0x603870,%edi
+13:   0x00000000004015fa <+54>:    callq  0x400bf0 <__isoc99_sscanf@plt>
+14:   0x00000000004015ff <+59>:    cmp    $0x3,%eax
+15:   0x0000000000401602 <+62>:    jne    0x401635 <phase_defused+113>
+16:   0x0000000000401604 <+64>:    mov    $0x402622,%esi
+17:   0x0000000000401609 <+69>:    lea    0x10(%rsp),%rdi
+18:   0x000000000040160e <+74>:    callq  0x401338 <strings_not_equal>
+19:   0x0000000000401613 <+79>:    test   %eax,%eax
+20:   0x0000000000401615 <+81>:    jne    0x401635 <phase_defused+113>
+21:   0x0000000000401617 <+83>:    mov    $0x4024f8,%edi
+22:   0x000000000040161c <+88>:    callq  0x400b10 <puts@plt>
+23:   0x0000000000401621 <+93>:    mov    $0x402520,%edi
+24:   0x0000000000401626 <+98>:    callq  0x400b10 <puts@plt>
+25:   0x000000000040162b <+103>:   mov    $0x0,%eax
+26: =>0x0000000000401630 <+108>:   callq  0x401242 <secret_phase>
+27:   0x0000000000401635 <+113>:   mov    $0x402558,%edi
+28:   0x000000000040163a <+118>:   callq  0x400b10 <puts@plt>
+29:   0x000000000040163f <+123>:   mov    0x68(%rsp),%rax
+30:   0x0000000000401644 <+128>:   xor    %fs:0x28,%rax
+31:   0x000000000040164d <+137>:   je     0x401654 <phase_defused+144>
+32:   0x000000000040164f <+139>:   callq  0x400b30 <__stack_chk_fail@plt>
+33:   0x0000000000401654 <+144>:   add    $0x78,%rsp
+34:   0x0000000000401658 <+148>:   retq
+```
+The special addresses `0x402619` (line 11) and `0x603870` (line 12) signify the required input to access the secret phase and our third phase input respectively. The required input states:
+```asm
+%d %d %s
+```
+This means we need to modify our third phase input to contain a third argument, which should be a string. Line 16 tells us what the string should be; printing the special address `0x402622` yields `DrEvil`.
+
+The assembly codes for `secret_phase` and `fun7` functions are given below:
+```asm
+1:  0x0000000000401242 <secret_phase>:
+2:    0x0000000000401242 <+0>:     push   %rbx
+3:    0x0000000000401243 <+1>:     callq  0x40149e <read_line>
+4:    0x0000000000401248 <+6>:     mov    $0xa,%edx
+5:    0x000000000040124d <+11>:    mov    $0x0,%esi
+6:    0x0000000000401252 <+16>:    mov    %rax,%rdi
+7:    0x0000000000401255 <+19>:    callq  0x400bd0 <strtol@plt>
+8:    0x000000000040125a <+24>:    mov    %rax,%rbx
+9:    0x000000000040125d <+27>:    lea    -0x1(%rax),%eax
+10:   0x0000000000401260 <+30>:    cmp    $0x3e8,%eax
+11:   0x0000000000401265 <+35>:    jbe    0x40126c <secret_phase+42>
+12:   0x0000000000401267 <+37>:    callq  0x40143a <explode_bomb>
+13:   0x000000000040126c <+42>:    mov    %ebx,%esi
+14:   0x000000000040126e <+44>:    mov    $0x6030f0,%edi
+15:   0x0000000000401273 <+49>:    callq  0x401204 <fun7>
+16:   0x0000000000401278 <+54>:    cmp    $0x2,%eax
+17:   0x000000000040127b <+57>:    je     0x401282 <secret_phase+64>
+18:   0x000000000040127d <+59>:    callq  0x40143a <explode_bomb>
+19:   0x0000000000401282 <+64>:    mov    $0x402438,%edi
+20:   0x0000000000401287 <+69>:    callq  0x400b10 <puts@plt>
+21:   0x000000000040128c <+74>:    callq  0x4015c4 <phase_defused>
+22:   0x0000000000401291 <+79>:    pop    %rbx
+23:   0x0000000000401292 <+80>:    retq
+
+1:  0x0000000000401204 <fun7>:
+2:    0x0000000000401204 <+0>:     sub    $0x8,%rsp
+3:    0x0000000000401208 <+4>:     test   %rdi,%rdi
+4:    0x000000000040120b <+7>:     je     0x401238 <fun7+52>
+5:    0x000000000040120d <+9>:     mov    (%rdi),%edx
+6:    0x000000000040120f <+11>:    cmp    %esi,%edx
+7:    0x0000000000401211 <+13>:    jle    0x401220 <fun7+28>
+8:    0x0000000000401213 <+15>:    mov    0x8(%rdi),%rdi
+9:    0x0000000000401217 <+19>:    callq  0x401204 <fun7>
+10:   0x000000000040121c <+24>:    add    %eax,%eax
+11:   0x000000000040121e <+26>:    jmp    0x40123d <fun7+57>
+12:   0x0000000000401220 <+28>:    mov    $0x0,%eax
+13:   0x0000000000401225 <+33>:    cmp    %esi,%edx
+14:   0x0000000000401227 <+35>:    je     0x40123d <fun7+57>
+15:   0x0000000000401229 <+37>:    mov    0x10(%rdi),%rdi
+16:   0x000000000040122d <+41>:    callq  0x401204 <fun7>
+17:   0x0000000000401232 <+46>:    lea    0x1(%rax,%rax,1),%eax
+18:   0x0000000000401236 <+50>:    jmp    0x40123d <fun7+57>
+19:   0x0000000000401238 <+52>:    mov    $0xffffffff,%eax
+20:   0x000000000040123d <+57>:    add    $0x8,%rsp
+21:   0x0000000000401241 <+61>:    retq
+```
+`secret_phase` will ask you to input something in the terminal (see line 3). The input needs to be a single integer which is less than or equal to 1001 (lines 9-12). The input will then be passed as an argument to `func7`. To succeed, the return of `func7` needs to be exactly equal to 2.
+
+The special address `0x6030f0` is a binary tree data structure. The jump table looks like this:
+```
+(gdb) x/60x 0x6030f0
+0x6030f0 <n1>:          0x0000000000000024      0x0000000000603110
+0x603100 <n1+16>:       0x0000000000603130      0x0000000000000000
+0x603110 <n21>:         0x0000000000000008      0x0000000000603190
+0x603120 <n21+16>:      0x0000000000603150      0x0000000000000000
+0x603130 <n22>:         0x0000000000000032      0x0000000000603170
+0x603140 <n22+16>:      0x00000000006031b0      0x0000000000000000
+0x603150 <n32>:         0x0000000000000016      0x0000000000603270
+0x603160 <n32+16>:      0x0000000000603230      0x0000000000000000
+0x603170 <n33>:         0x000000000000002d      0x00000000006031d0
+0x603180 <n33+16>:      0x0000000000603290      0x0000000000000000
+0x603190 <n31>:         0x0000000000000006      0x00000000006031f0
+0x6031a0 <n31+16>:      0x0000000000603250      0x0000000000000000
+0x6031b0 <n34>:         0x000000000000006b      0x0000000000603210
+0x6031c0 <n34+16>:      0x00000000006032b0      0x0000000000000000
+0x6031d0 <n45>:         0x0000000000000028      0x0000000000000000
+0x6031e0 <n45+16>:      0x0000000000000000      0x0000000000000000
+0x6031f0 <n41>:         0x0000000000000001      0x0000000000000000
+0x603200 <n41+16>:      0x0000000000000000      0x0000000000000000
+0x603210 <n47>:         0x0000000000000063      0x0000000000000000
+0x603220 <n47+16>:      0x0000000000000000      0x0000000000000000
+0x603230 <n44>:         0x0000000000000023      0x0000000000000000
+0x603240 <n44+16>:      0x0000000000000000      0x0000000000000000
+0x603250 <n42>:         0x0000000000000007      0x0000000000000000
+0x603260 <n42+16>:      0x0000000000000000      0x0000000000000000
+0x603270 <n43>:         0x0000000000000014      0x0000000000000000
+0x603280 <n43+16>:      0x0000000000000000      0x0000000000000000
+0x603290 <n46>:         0x000000000000002f      0x0000000000000000
+0x6032a0 <n46+16>:      0x0000000000000000      0x0000000000000000
+0x6032b0 <n48>:         0x00000000000003e9      0x0000000000000000
+0x6032c0 <n48+16>:      0x0000000000000000      0x0000000000000000
+```
+The above jump table can be summarised as:
+```bash
+n1(36) ─> n21(8) ─> n31(6) ─> n41(1)
+│         │      │
+│         │      └──> n42(7)
+│         │
+│         └──> n32(22) ─> n43(20)
+│              │
+│              └──>n44(35)
+│
+└──> n22(50) ─> n33(45) ─> n45(40)
+     │          │      
+     |          └──> n46(47)
+     │
+     └──> n34(107) ─> n47(99)
+          │
+          └──> n48(1001)
+```
+`func7` is a recursive function. The code can be roughly translated as (not accurately):
+```C
+// Tree definition
+struct Tree {
+    int numb;
+    Tree *left;
+    Tree *right;
+};
+
+// b is our input
+int func7(struct Tree *t, int b)
+{
+    if (t == NULL)
+        return -1;
+
+    if (t->value == b)
+        return 0;
+    if (t->value < b)
+        return 2 * func(t->right, b) + 1;
+      
+    return 2 * func(t->left, b);
+}
+```
+The solution to this function is `22`.
