@@ -5,3 +5,5 @@ string
 phase4.c
 all
 output
+test.c
+test_farm.c

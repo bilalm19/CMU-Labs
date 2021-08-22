@@ -60,3 +60,25 @@ a8 dc 61 55 c3 00 00 00
 ```
 
 ## Phase 4
+This is a very easy phase. We just need to find byte sequences in the gadget farm provided to us. We may not be able to make the target execute our code, but we can still modify the stack and add our data to it. Firstly, we will still overflow our buffer of 40 bytes, and overwrite the return address. Secondly, we need to fill our stack with addresses and data that will make the program execute the exploit similar to phase 2. The hints and constraints in the lab's reading helped me narrow down on what byte sequences I am looking for.
+
+The `popq` instruction is very useful to us here. It will pop the value from the stack and into the register of our choosing. This means, we can store our cookie in the stack and pop it to a register.
+
+(Note that the text for phase 4 below are made with reference to the [disassembly of rtarget binary file](./dump_rtarget.txt))
+
+I wasn't able to find the byte `5f` (pop stack data to register `%rdi`) in the gadget farm, so I settled with the byte `58` (pop stack data to register `%rax`). Luckily, I was able to find the byte sequence for the instruction `movq %rax,%rdi` in the gadget farm. Otherwise, I would have had to look for an alternative to `58`.
+
+With this information, we can create our solution string:
+```
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+ab 19 40 00 00 00 00 00 /* Address of byte sequence for the instruction popq %rax */
+fa 97 b9 59 00 00 00 00 /* Our cookie */
+c5 19 40 00 00 00 00 00 /* Address of byte sequence for the instruction movq %rax,%rdi */
+ec 17 40 00 00 00 00 00 /* Address of touch2 */
+```
+
+## Phase 5
