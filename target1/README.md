@@ -41,7 +41,7 @@ ec 17 40 00 00 00 00 00
 ```
 
 ## Phase 3
-This one is also pretty simple. We need to call touch3 and store the address of our cookie string in register `%rdi`. The challenge we face are the various instructions that will overwrite our stack. Hence, we need to store the string representation of our cookie on an address which will not get overwritten. Notice how the `pushq` instruction we use in our execution code pushes data on address `0x5561dca0`. This means, all the future pushes to the stack will be on addresses starting from `0x5561dca0` and onwards. Therefore, we will store our string in the stack on address `0x5561dca8`. Our execution code will look like this:
+This one is also pretty simple. We need to call touch3 and store the address of our cookie string in register `%rdi`. The challenge we face are the various instructions that will overwrite our stack. Hence, we need to store the string representation of our cookie on an address which will not get overwritten, which is exactly before the stack address storing the address of touch3. Notice how the `pushq` instruction we use in our execution code pushes data on address `0x5561dca0`. This means, all the future pushes to the stack will be on addresses starting from `0x5561dca0` and onwards. Therefore, we will store our string in the stack on address `0x5561dca8`. Our execution code will look like this:
 ```asm
 0:	68 fa 18 40 00       	pushq  $0x4018fa
 5:	48 c7 c7 a8 dc 61 55 	mov    $0x5561dca8,%rdi
@@ -82,8 +82,28 @@ ec 17 40 00 00 00 00 00 /* Address of touch2 */
 ```
 
 ## Phase 5
-Pretty simple but long phase. As the hint suggests, we really only need 8 gadgets to complete this.
+Pretty simple but long phase. We are again going to overflow our buffer using 40 bytes of useless data. After that, we only need to find the bytes sequences of the instructions we need.
 
+We will again store the string representation of our cookie at the stack address just before the address storing the pointer to touch3 (Remember, everything after that is going to be overwritten). Now the challenge is how to get this address and store it in register `%rdi`. We also cannot determine what the stack position is going to be when the program is run, due to randomization.
+
+The key here is the function `add_xy` in the gadget farm. This function adds the two arguments passed to it and returns the value. The two arguments are represented by the registers `%rdi` (first argument) and `%rsi` (second argument). The register `%rax` will be populated with the result of the addition. This means, we will need to store the value of `%rsp` in one of the two argument registers and the value we need to add (to get the stack address where our string cookie is stored) on the other. We will then move the result into `%rdi`. We will also store our adding value in the stack and pop it into a register.
+
+I was going through the byte sequences in the gadge farm and came to the conclusion that we are going to need 8 gadgets to complete this (as the hint in the reading suggested). There is no direct way of moving the value of `%rsp` to either `%rdi` or `%rsi`, nor is there a byte sequence to pop our value from the stack to `%rdi` or `%rsi`.
+The only pop instruction I could find was `popq %rax`, hence, I will use this. Upon inspection, we also won't be able to find the instruction `movq %rax,%rsi`, but we do have `movq %rax,%rdi`. However, we can find a long way of moving the value from `%eax` to `%esi`, using the following sequences of instructions:
+```
+89 c2 /* movl %eax,%edx */
+89 d1 /* movl %edx,%ecx */
+89 ce /* movl %ecx,%eci */
+```
+Since these are instructions on the lower 4 bytes, these will result in the upper 4 bytes of a register to be zeroed. Therefore, we can only store our adding value to `%rsi`.
+
+We will use the following sequences of instructions to move `%rsp` to `%rdi`:
+```
+48 89 e0 /* movq %rsp,%rax */
+48 89 c7 /* movq %rax,%rdi */
+```
+
+To calculate the value we are going to add to `%rsp`, to get the address pointing to our string cookie, we will look at where our address to the instruction `movq %rsp,%rax` is located in the stack. For my solution, it was located 32 (0x20) bytes away. Hence, the solution:
 ```
 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00
